@@ -1,42 +1,56 @@
 package com.repositorio.repositorioWeb.controller;
 
-import com.repositorio.repositorioWeb.dto.LoginRequest;
-import com.repositorio.repositorioWeb.dto.LoginResponse;
+import com.repositorio.repositorioWeb.dto.*;
 import com.repositorio.repositorioWeb.model.User;
-import com.repositorio.repositorioWeb.service.JwtService;
-import com.repositorio.repositorioWeb.service.UserService;
-
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.repositorio.repositorioWeb.repository.UserRepository;
+import com.repositorio.repositorioWeb.service.AuthService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")  // Permitir solicitudes desde el frontend
+@RequiredArgsConstructor
 public class AuthController {
+    private final AuthService authService;
+    private final UserRepository userRepository; 
 
-    private final UserService userService;
-    private final JwtService jwtService;
-
-    @Autowired
-    public AuthController(UserService userService, JwtService jwtService) {
-        this.userService = userService;
-        this.jwtService = jwtService;
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Object> login(@RequestBody LoginRequest request) {
-        Optional<User> optionalUser = userService.authenticateUser(request.getEmail(), request.getPassword());
-    
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            String token = jwtService.generateToken(user);
-            LoginResponse response = new LoginResponse(token, user.getEmail(), user.getRole().name());
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(401).body("Credenciales inválidas");
-        }
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
+
+    
+
+    // @PutMapping("/profile")
+    // public ResponseEntity<UserProfileResponse> updateUserProfile(
+    //         @RequestBody UpdateProfileRequest request,
+    //         Authentication authentication
+    // ) {
+    //     return ResponseEntity.ok(authService.updateUserProfile(request, authentication));
+    // }
+
+    @GetMapping("/profile")
+public ResponseEntity<UserProfileResponse> getUserProfile(Authentication authentication) {
+    String email = authentication.getName();
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+    
+    UserProfileResponse response = new UserProfileResponse();
+    response.setFirstName(user.getFirstName());
+    response.setLastName(user.getLastName());
+    response.setMaternalLastName(user.getMaternalLastName());
+    response.setEmail(user.getEmail());
+    response.setRole(user.getRole());
+   // response.setGrade(user.getGra()); // Campo adicional si lo necesitas
+    
+    return ResponseEntity.ok(response);
+}
 }

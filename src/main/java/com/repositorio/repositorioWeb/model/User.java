@@ -1,16 +1,30 @@
 package com.repositorio.repositorioWeb.model;
 
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
-import jakarta.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "users")
-public class User {
-
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUser;
@@ -44,10 +58,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull(message = "El rol no puede ser nulo.")
-    private Role role; // Enum: STUDENT, TEACHER
+    private Role role;
 
     // Constructores
-    public User() {}
+    public User() {
+    }
 
     public User(String firstName, String lastName, String maternalLastName, String email, String passwordHash, Role role) {
         this.firstName = firstName;
@@ -115,6 +130,42 @@ public class User {
         this.role = role;
     }
 
+    // UserDetails methods
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
     // Equals y HashCode
     @Override
     public boolean equals(Object o) {
@@ -142,6 +193,4 @@ public class User {
                ", role=" + role +
                '}';
     }
-
-   
 }

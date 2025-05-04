@@ -12,7 +12,7 @@ import java.util.List;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
 
